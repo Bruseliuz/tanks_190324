@@ -52,7 +52,7 @@ class Team1 extends Team {
     //*******************************************************
     // Fortsätt att vandra runt.
     public void wander() {
-      if(searching){
+      if(this.searching){
           for(Node node : nodeStack){
           System.out.println( node.getRow()+" : "+node.getCol());
         }
@@ -72,15 +72,12 @@ class Team1 extends Team {
           }
         }
 
-      } else {
-<<<<<<< Updated upstream
+      } else if (!this.total_path.isEmpty()){
+        //moveTo(this.total_path.pop().position);
         moveTo(this.total_path.get(this.total_path.size()-1).position);
-        this.total_path.remove(this.total_path.size()-1);
-=======
-        moveTo(this.total_path.pop().position);
-        //moveTo(this.total_path.get(this.total_path.size()-1).position);
-        //total_path.remove(this.total_path.size()-1);
->>>>>>> Stashed changes
+        total_path.remove(this.total_path.size()-1);
+      } else {
+        this.searching = true;
       }
     }
 
