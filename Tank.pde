@@ -84,7 +84,7 @@ class Tank extends Sprite { //<>//
   private HashMap<String, Sensor> mappedSensors = new HashMap<String, Sensor>();
   private ArrayList<Sensor> sensors = new ArrayList<Sensor>();
   public Set<Node> traversedNodes = new HashSet<Node>();
-  public ArrayList<Node> total_path = new ArrayList<Node>();
+  public Stack<Node> total_path = new Stack<Node>();
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
 
   //**************************************************
@@ -165,10 +165,10 @@ class Tank extends Sprite { //<>//
 
   public void reconstruct_path(Map<Node, Node> cameFrom, Node current) {
     System.out.println("RECONSTRUCT PATH");
-      total_path.add(current);
+      total_path.push(current);
       while (cameFrom.containsKey(current)) {
         current = cameFrom.get(current);
-        total_path.add(current);
+        total_path.push(current);
       }
       for(Node node : total_path){
         System.out.println("BANANER XD");
@@ -198,22 +198,29 @@ class Tank extends Sprite { //<>//
       System.out.println("Calcule path 2");
       
       while(!openSet.isEmpty()){
+        System.out.println("openSet = " + openSet.size());
         int lowest = Integer.MAX_VALUE;
         Node current = null;
+<<<<<<< Updated upstream
         System.out.println("Calcule path 3");
         for(Map.Entry<Node,Integer> entry : fScore.entrySet()){
         System.out.println("Calcule path 4");
           Node nodeKey = entry.getKey();
           Integer value = entry.getValue();
+=======
+        for (Node node : openSet) {
+          int value = fScore.get(node);
+>>>>>>> Stashed changes
 
           if(value < lowest) {
         System.out.println("Calcule path 5");
             lowest = value;
-            current = nodeKey;
+            current = node;
           }
         }
         System.out.println(current.position.toString() +" : "+goalNode.position.toString());
         if(current.position.equals(goalNode.position)){
+          System.out.println("goal found ------------");
           reconstruct_path(cameFrom, current);
           return;
         }
@@ -221,6 +228,7 @@ class Tank extends Sprite { //<>//
         openSet.remove(current);
         //VI ÄR HÄR DEN ADDERAR ALDRIG NEIGHBORS :(( (((())))))
         for(Node neighbor : grid.getNearestNodes(current)){
+<<<<<<< Updated upstream
         System.out.println("Calcule path 7");
           if (!internalGrid[neighbor.getRow()][neighbor.getCol()]) {
             System.out.println("Calcule path 8");
@@ -238,6 +246,22 @@ class Tank extends Sprite { //<>//
                 }
               }
             
+=======
+          System.out.println("Inside neighbor loop");
+          if (!internalGrid[neighbor.getRow()][neighbor.getCol()]) {
+            System.out.println("Not an obstacle ----------");
+            int tentative_gScore = gScore.get(current) + 1;
+            if(!gScore.containsKey(neighbor) || tentative_gScore < gScore.get(neighbor)){
+              System.out.println("Inside gscore IF");
+              cameFrom.put(neighbor, current);
+              gScore.put(neighbor, tentative_gScore);
+              fScore.put(neighbor, gScore.get(neighbor) + heuristic(neighbor, goalNode));
+              if (!openSet.contains(neighbor)) {
+                System.out.println("Adding Neighbor!");
+                openSet.add(neighbor);
+              }
+            } 
+>>>>>>> Stashed changes
           }
         }
       }
