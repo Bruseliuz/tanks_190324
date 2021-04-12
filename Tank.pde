@@ -174,6 +174,7 @@ class Tank extends Sprite { //<>//
         System.out.println("BANANER XD");
         System.out.println("Row:"+node.getRow()+" Col:"+node.getCol());
       }
+      Collections.reverse(total_path);
     }
 
     public void traversePath(ArrayList<Node> nodeList){
@@ -194,15 +195,19 @@ class Tank extends Sprite { //<>//
       Map<Node,Integer> fScore = new HashMap<Node,Integer>();
       fScore.put(startNode,heuristic(startNode,goalNode));
       Map<Node,Node> cameFrom = new HashMap<Node,Node>();
-
+      System.out.println("Calcule path 2");
+      
       while(!openSet.isEmpty()){
         int lowest = Integer.MAX_VALUE;
         Node current = null;
+        System.out.println("Calcule path 3");
         for(Map.Entry<Node,Integer> entry : fScore.entrySet()){
+        System.out.println("Calcule path 4");
           Node nodeKey = entry.getKey();
           Integer value = entry.getValue();
 
           if(value < lowest) {
+        System.out.println("Calcule path 5");
             lowest = value;
             current = nodeKey;
           }
@@ -210,31 +215,35 @@ class Tank extends Sprite { //<>//
         System.out.println(current.position.toString() +" : "+goalNode.position.toString());
         if(current.position.equals(goalNode.position)){
           reconstruct_path(cameFrom, current);
+          return;
         }
-
+        System.out.println("Calcule path 6");
         openSet.remove(current);
         //VI ÄR HÄR DEN ADDERAR ALDRIG NEIGHBORS :(( (((())))))
         for(Node neighbor : grid.getNearestNodes(current)){
+        System.out.println("Calcule path 7");
           if (!internalGrid[neighbor.getRow()][neighbor.getCol()]) {
+            System.out.println("Calcule path 8");
             int tentative_gScore = gScore.get(current) + 1;
-            if(gScore.containsKey(neighbor)){
-              if(tentative_gScore < gScore.get(neighbor)){
+            //ÄR ALDRIG TRUE
+              if(!gScore.containsKey(neighbor) || tentative_gScore < gScore.get(neighbor)){
+                System.out.println("Calcule path 9");
                 cameFrom.put(neighbor, current);
                 gScore.put(neighbor, tentative_gScore);
                 fScore.put(neighbor, gScore.get(neighbor) + heuristic(neighbor, goalNode));
+                System.out.println("Check before neighbor!");
                 if (!openSet.contains(neighbor)) {
                   System.out.println("Adding Neighbor!");
                   openSet.add(neighbor);
                 }
               }
-            }
+            
           }
         }
       }
     }
     //Calculate manhattan distance
     public int heuristic(Node node, Node goalNode){
-      
       return Math.abs(node.getRow()-goalNode.getRow()) + Math.abs(node.getCol()-goalNode.getCol());
     }
 
@@ -1106,7 +1115,7 @@ class Tank extends Sprite { //<>//
       message_collision( other);//collision(Tree);
     }
   }
-
+    //Adding obstacle to internal grid
     public void addObstacle(PVector position){
       Node node = grid.getNearestNode(position);
       internalGrid[node.getRow()][node.getCol()] = true;
@@ -1128,20 +1137,20 @@ class Tank extends Sprite { //<>//
     float minDistance = this.radius + other.radius;
 
     if (distanceVectMag <= minDistance) {
+      
       //Backa ett steg
       //traversedNodes.add(grid.getNearestNode(other.position)); Einar
       println("! Tank["+ this.getId() + "] – collided with another Tank" + other.team_id + ":"+other.id);
       addObstacle(other.position);
       if (!this.stop_state) {
-        //this.position.set(this.positionPrev); // Flytta tillbaka.
-
+        this.position.set(this.positionPrev); // Flytta tillbaka.
+        collide(other.position);
         // Kontroll om att tanken inte "fastnat" i en annan tank. 
         distanceVect = PVector.sub(other.position, this.position);
         distanceVectMag = distanceVect.mag();
 
 
         if (distanceVectMag <= minDistance) {
-          collide(other.position);
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
         this.isMoving = false;  

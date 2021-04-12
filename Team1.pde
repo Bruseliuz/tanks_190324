@@ -73,8 +73,8 @@ class Team1 extends Team {
         }
 
       } else {
-        moveTo(total_path.get(total_path.size()-1).position);
-        total_path.remove(total_path.size()-1);
+        moveTo(this.total_path.get(this.total_path.size()-1).position);
+        this.total_path.remove(this.total_path.size()-1);
       }
     }
 
