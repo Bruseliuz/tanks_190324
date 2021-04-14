@@ -1041,7 +1041,7 @@ class Tank extends Sprite { //<>//
       position.x > team.homebase_x && 
       position.x < team.homebase_x+team.homebase_width - 50 &&
       position.y > team.homebase_y &&
-      position.y < team.homebase_y+team.homebase_height -50) {
+      position.y < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
         message_arrivedAtHomebase();
@@ -1086,12 +1086,13 @@ class Tank extends Sprite { //<>//
         addStationaryTankObstacle(position);
         retreating = true;
         Node goalNode = null;
-        float currentDistance = 1500;
+        float currentDistance = 10000;
         for (Node node : homeBase) {
-          float distance = ((position.x + position.y) - (node.position.x + node.position.y));
-          if (distance < currentDistance) {
+          PVector distance = PVector.sub(node.position, this.position);
+          float distanceVectMag = distance.mag();
+          if (distanceVectMag < currentDistance) {
             goalNode = node;
-            currentDistance = distance;
+            currentDistance = distanceVectMag;
           } 
         }
         System.out.println("GOING HOME TO ----------:" + goalNode.position.x + goalNode.position.y);
