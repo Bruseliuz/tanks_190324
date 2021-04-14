@@ -53,21 +53,20 @@ class Team1 extends Team {
     // Fortsätt att vandra runt.
     public void wander() {
       if(this.searching){
-          for(Node node : nodeStack){
-          System.out.println( node.getRow()+" : "+node.getCol());
+        Node currentNode = this.nodeStack.pop();
+        if (!this.internalGrid[currentNode.getRow()][currentNode.getCol()]) {
+          moveTo(currentNode.position);
+
         }
 
-        Node currentNode = nodeStack.pop();
-        moveTo(currentNode.position);
-
         //om current node inte finns i traversed node, lägg till den
-        if(!traversedNodes.contains(currentNode)){
-          traversedNodes.add(currentNode);
+        if(!this.traversedNodes.contains(currentNode)){
+          this.traversedNodes.add(currentNode);
           
           //För varje närliggande nod pusha den noden till stacken.
           for(Node node : grid.getNearestNodes(currentNode)){
-            if(!traversedNodes.contains(node)){
-                nodeStack.push(node);
+            if(!this.traversedNodes.contains(node)){
+                this.nodeStack.push(node);
             }
           }
         }
@@ -75,7 +74,8 @@ class Team1 extends Team {
       } else if (!this.total_path.isEmpty()){
         //moveTo(this.total_path.pop().position);
         moveTo(this.total_path.get(this.total_path.size()-1).position);
-        total_path.remove(this.total_path.size()-1);
+        this.total_path.remove(this.total_path.size()-1);
+        
       } else {
         this.searching = true;
       }

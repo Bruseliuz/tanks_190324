@@ -39,7 +39,7 @@ public class Timer{
   }
   
   public void setTime(int min, int sec){    
-    totalTime = min * 60 + sec;
+    totalTime = min * 600 + sec;
   }
   
   /*

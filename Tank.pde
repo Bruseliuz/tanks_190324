@@ -166,9 +166,15 @@ class Tank extends Sprite { //<>//
   public void reconstruct_path(Map<Node, Node> cameFrom, Node current) {
     System.out.println("RECONSTRUCT PATH");
       total_path.add(current);
+      if (!traversedNodes.contains(current)) {
+        traversedNodes.add(current);
+      }
       while (cameFrom.containsKey(current)) {
         current = cameFrom.get(current);
         total_path.add(current);
+        if (!traversedNodes.contains(current)) {
+          traversedNodes.add(current);
+        }
       }
       System.out.println(total_path.toString());
       //moveTo(this.total_path.get(this.total_path.size()-1).position);
@@ -1063,9 +1069,8 @@ class Tank extends Sprite { //<>//
   void collide(PVector collisionPosition){
     if(!collisionPosition.equals(targetPosition)){
       this.searching = false;
-      calculatePath(grid.getNearestNode(position),grid.getNearestNode(targetPosition));
+      calculatePath(grid.getNearestNode(position), grid.getNearestNode(targetPosition));
     }
-    
   }
 
 
@@ -1082,22 +1087,24 @@ class Tank extends Sprite { //<>//
     float minDistance = this.radius + other.radius;
 
     if (distanceVectMag <= minDistance && !this.stop_state) {
-
+      addTreeObstacle(other, this.targetPosition);
+      addObstacle(other.position);
+      collide(other.position);
+      this.position.set(this.positionPrev);
       println("! Tank["+ this.getId() + "] – collided with Tree.");
 
       if (!this.stop_state) {
-        addObstacle(other.position);
+       
         //this.position.set(this.positionPrev); // Flytta tillbaka.
 
         // Kontroll om att tanken inte "fastnat" i en annan tank. 
         distanceVect = PVector.sub(other.position, this.position);
         distanceVectMag = distanceVect.mag();
         if (distanceVectMag < minDistance) {
-          //this.position.set(this.positionPrev);
-          collide(other.position);
+          
           println("! Tank["+ this.getId() + "] – FAST I ETT TRÄD");
         }
-
+        this.isMoving = false;  
         stopMoving_state();
       }
 
@@ -1107,9 +1114,19 @@ class Tank extends Sprite { //<>//
 
 
       // Meddela tanken om att kollision med trädet gjorts.
-      message_collision( other);//collision(Tree);
+      message_collision(other);//collision(Tree);
     }
   }
+
+  public void addTreeObstacle(Tree tree, PVector targetedPosition){
+      PVector distanceVect = PVector.sub(tree.position, targetedPosition);
+      float distanceVectMag = distanceVect.mag();
+      if(distanceVectMag < 45){
+       Node node = grid.getNearestNode(targetPosition);
+       internalGrid[node.getRow()][node.getCol()] = true;
+      }
+
+    }
 
     public void addObstacle(PVector position){
       Node node = grid.getNearestNode(position);

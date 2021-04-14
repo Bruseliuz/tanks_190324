@@ -1659,9 +1659,15 @@ class Tank extends Sprite { //<>//
   public void reconstruct_path(Map<Node, Node> cameFrom, Node current) {
     System.out.println("RECONSTRUCT PATH");
       total_path.add(current);
+      if (!traversedNodes.contains(current)) {
+        traversedNodes.add(current);
+      }
       while (cameFrom.containsKey(current)) {
         current = cameFrom.get(current);
         total_path.add(current);
+        if (!traversedNodes.contains(current)) {
+          traversedNodes.add(current);
+        }
       }
       System.out.println(total_path.toString());
       //moveTo(this.total_path.get(this.total_path.size()-1).position);
@@ -2556,9 +2562,8 @@ class Tank extends Sprite { //<>//
   public void collide(PVector collisionPosition){
     if(!collisionPosition.equals(targetPosition)){
       this.searching = false;
-      calculatePath(grid.getNearestNode(position),grid.getNearestNode(targetPosition));
+      calculatePath(grid.getNearestNode(position), grid.getNearestNode(targetPosition));
     }
-    
   }
 
 
@@ -2575,22 +2580,24 @@ class Tank extends Sprite { //<>//
     float minDistance = this.radius + other.radius;
 
     if (distanceVectMag <= minDistance && !this.stop_state) {
-
+      addTreeObstacle(other, this.targetPosition);
+      addObstacle(other.position);
+      collide(other.position);
+      this.position.set(this.positionPrev);
       println("! Tank["+ this.getId() + "] – collided with Tree.");
 
       if (!this.stop_state) {
-        addObstacle(other.position);
+       
         //this.position.set(this.positionPrev); // Flytta tillbaka.
 
         // Kontroll om att tanken inte "fastnat" i en annan tank. 
         distanceVect = PVector.sub(other.position, this.position);
         distanceVectMag = distanceVect.mag();
         if (distanceVectMag < minDistance) {
-          //this.position.set(this.positionPrev);
-          collide(other.position);
+          
           println("! Tank["+ this.getId() + "] – FAST I ETT TRÄD");
         }
-
+        this.isMoving = false;  
         stopMoving_state();
       }
 
@@ -2600,9 +2607,19 @@ class Tank extends Sprite { //<>//
 
 
       // Meddela tanken om att kollision med trädet gjorts.
-      message_collision( other);//collision(Tree);
+      message_collision(other);//collision(Tree);
     }
   }
+
+  public void addTreeObstacle(Tree tree, PVector targetedPosition){
+      PVector distanceVect = PVector.sub(tree.position, targetedPosition);
+      float distanceVectMag = distanceVect.mag();
+      if(distanceVectMag < 45){
+       Node node = grid.getNearestNode(targetPosition);
+       internalGrid[node.getRow()][node.getCol()] = true;
+      }
+
+    }
 
     public void addObstacle(PVector position){
       Node node = grid.getNearestNode(position);
@@ -2917,21 +2934,20 @@ class Team1 extends Team {
     // Fortsätt att vandra runt.
     public void wander() {
       if(this.searching){
-          for(Node node : nodeStack){
-          System.out.println( node.getRow()+" : "+node.getCol());
+        Node currentNode = this.nodeStack.pop();
+        if (!this.internalGrid[currentNode.getRow()][currentNode.getCol()]) {
+          moveTo(currentNode.position);
+
         }
 
-        Node currentNode = nodeStack.pop();
-        moveTo(currentNode.position);
-
         //om current node inte finns i traversed node, lägg till den
-        if(!traversedNodes.contains(currentNode)){
-          traversedNodes.add(currentNode);
+        if(!this.traversedNodes.contains(currentNode)){
+          this.traversedNodes.add(currentNode);
           
           //För varje närliggande nod pusha den noden till stacken.
           for(Node node : grid.getNearestNodes(currentNode)){
-            if(!traversedNodes.contains(node)){
-                nodeStack.push(node);
+            if(!this.traversedNodes.contains(node)){
+                this.nodeStack.push(node);
             }
           }
         }
@@ -2939,7 +2955,8 @@ class Team1 extends Team {
       } else if (!this.total_path.isEmpty()){
         //moveTo(this.total_path.pop().position);
         moveTo(this.total_path.get(this.total_path.size()-1).position);
-        total_path.remove(this.total_path.size()-1);
+        this.total_path.remove(this.total_path.size()-1);
+        
       } else {
         this.searching = true;
       }
@@ -3479,7 +3496,7 @@ public class Timer{
   }
   
   public void setTime(int min, int sec){    
-    totalTime = min * 60 + sec;
+    totalTime = min * 600 + sec;
   }
   
   /*
