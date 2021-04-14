@@ -19,7 +19,7 @@ class Team1 extends Team {
 
   //==================================================
   public class Tank2 extends Tank {
-    Node previousNode;
+    
     boolean started;
     Stack<Node> nodeStack = new Stack<Node>();
 
@@ -52,29 +52,42 @@ class Team1 extends Team {
     //*******************************************************
     // Fortsätt att vandra runt.
     public void wander() {
-      if(searching){
-          for(Node node : nodeStack){
-          System.out.println( node.getRow()+" : "+node.getCol());
+      if(this.searching){
+        Node currentNode = this.nodeStack.pop();
+        if (!this.internalGrid[currentNode.getRow()][currentNode.getCol()]) {
+          moveTo(currentNode.position);
+
         }
 
-        Node currentNode = nodeStack.pop();
-        moveTo(currentNode.position);
-
         //om current node inte finns i traversed node, lägg till den
-        if(!traversedNodes.contains(currentNode)){
-          traversedNodes.add(currentNode);
+        if(!this.traversedNodes.contains(currentNode)){
+          this.traversedNodes.add(currentNode);
           
           //För varje närliggande nod pusha den noden till stacken.
           for(Node node : grid.getNearestNodes(currentNode)){
-            if(!traversedNodes.contains(node)){
-                nodeStack.push(node);
+            if(!this.traversedNodes.contains(node)){
+                this.nodeStack.push(node);
             }
           }
         }
 
+      } else if (!this.total_path.isEmpty()){
+        //moveTo(this.total_path.pop().position);
+        moveTo(this.total_path.get(this.total_path.size()-1).position);
+        this.total_path.remove(this.total_path.size()-1);
+        
       } else {
-        moveTo(total_path.get(total_path.size()-1).position);
-        total_path.remove(total_path.size()-1);
+        if (this.retreating) {
+          try {
+            Thread.sleep(3000);
+          }
+          catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+          this.retreating = false;
+        }
+        
+        this.searching = true;
       }
     }
 
