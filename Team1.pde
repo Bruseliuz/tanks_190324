@@ -136,7 +136,7 @@ class Team1 extends Team {
       if ((other.getName() == "tank") && (other.team_id != this.team_id)) {
         if (this.hasShot && (!other.isDestroyed)) {
           println("["+this.team_id+":"+ this.getId() + "] SKJUTER PÅ ["+ other.team_id +":"+other.getId()+"]");
-          fire();
+          //fire();
         } else {
           retreat(other);
         }

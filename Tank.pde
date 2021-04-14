@@ -1176,6 +1176,9 @@ class Tank extends Sprite { //<>//
     boolean enemy = false;
     if (other.team_id != team_id) {
       enemy = true;
+      for (Node node : grid.getNearestNodes(new Node(other.position.x, other.position.y))) {
+        internalGrid[node.getRow()][node.getCol()] = true;
+      }
     }
     // Calculate magnitude of the vector separating the tanks
     float distanceVectMag = distanceVect.mag();
