@@ -19,7 +19,7 @@ class Team1 extends Team {
 
   //==================================================
   public class Tank2 extends Tank {
-    Node previousNode;
+    
     boolean started;
     Stack<Node> nodeStack = new Stack<Node>();
 
@@ -77,6 +77,16 @@ class Team1 extends Team {
         this.total_path.remove(this.total_path.size()-1);
         
       } else {
+        if (this.retreating) {
+          try {
+            Thread.sleep(3000);
+          }
+          catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+          this.retreating = false;
+        }
+        
         this.searching = true;
       }
     }

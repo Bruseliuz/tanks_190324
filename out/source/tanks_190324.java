@@ -1509,6 +1509,10 @@ class Tank extends Sprite { //<>//
   float rotation;
   float rotation_speed;
 
+  Node previousNode;
+
+  boolean retreating;
+
   Team team;
   PImage img;
   //float diameter; //Sprite
@@ -1575,10 +1579,12 @@ class Tank extends Sprite { //<>//
 
   // Tank sensors
   private HashMap<String, Sensor> mappedSensors = new HashMap<String, Sensor>();
+
   private ArrayList<Sensor> sensors = new ArrayList<Sensor>();
   public Set<Node> traversedNodes = new HashSet<Node>();
   public ArrayList<Node> total_path = new ArrayList<Node>();
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
+  private ArrayList<Node> homeBase = new ArrayList<Node>();
 
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
@@ -1609,7 +1615,7 @@ class Tank extends Sprite { //<>//
 
     this.diameter = diameter;
     this.radius = this.diameter/2; // For hit detection.
-
+    this.retreating = false;
     this.backward_state = false;
     this.forward_state = false;
     this.turning_right_state = false;
@@ -1659,15 +1665,10 @@ class Tank extends Sprite { //<>//
   public void reconstruct_path(Map<Node, Node> cameFrom, Node current) {
     System.out.println("RECONSTRUCT PATH");
       total_path.add(current);
-      if (!traversedNodes.contains(current)) {
-        traversedNodes.add(current);
-      }
+    
       while (cameFrom.containsKey(current)) {
         current = cameFrom.get(current);
         total_path.add(current);
-        if (!traversedNodes.contains(current)) {
-          traversedNodes.add(current);
-        }
       }
       System.out.println(total_path.toString());
       //moveTo(this.total_path.get(this.total_path.size()-1).position);
@@ -1714,20 +1715,22 @@ class Tank extends Sprite { //<>//
         openSet.remove(current);
         //VI ÄR HÄR DEN ADDERAR ALDRIG NEIGHBORS :(( (((())))))
         for(Node neighbor : grid.getNearestNodes(current)){
-          System.out.println("Inside neighbor loop");
-          if (!internalGrid[neighbor.getRow()][neighbor.getCol()]) {
-            System.out.println("Not an obstacle ----------");
-            int tentative_gScore = gScore.get(current) + 1;
-            if(!gScore.containsKey(neighbor) || tentative_gScore < gScore.get(neighbor)){
-              System.out.println("Inside gscore IF");
-              cameFrom.put(neighbor, current);
-              gScore.put(neighbor, tentative_gScore);
-              fScore.put(neighbor, gScore.get(neighbor) + heuristic(neighbor, goalNode));
-              if (!openSet.contains(neighbor)) {
-                System.out.println("Adding Neighbor!");
-                openSet.add(neighbor);
-              }
-            } 
+          if (traversedNodes.contains(neighbor)){
+            System.out.println("Inside neighbor loop");
+            if (!internalGrid[neighbor.getRow()][neighbor.getCol()]) {
+              System.out.println("Not an obstacle ----------");
+              int tentative_gScore = gScore.get(current) + 1;
+              if(!gScore.containsKey(neighbor) || tentative_gScore < gScore.get(neighbor)){
+                System.out.println("Inside gscore IF");
+                cameFrom.put(neighbor, current);
+                gScore.put(neighbor, tentative_gScore);
+                fScore.put(neighbor, gScore.get(neighbor) + heuristic(neighbor, goalNode));
+                if (!openSet.contains(neighbor)) {
+                  System.out.println("Adding Neighbor!");
+                  openSet.add(neighbor);
+                }
+              } 
+            }
           }
         }
       }
@@ -2529,12 +2532,13 @@ class Tank extends Sprite { //<>//
 
     if (
       position.x > team.homebase_x && 
-      position.x < team.homebase_x+team.homebase_width &&
+      position.x < team.homebase_x+team.homebase_width - 50 &&
       position.y > team.homebase_y &&
-      position.y < team.homebase_y+team.homebase_height) {
+      position.y < team.homebase_y+team.homebase_height -50) {
       if (!isAtHomebase) {
         isAtHomebase = true;
         message_arrivedAtHomebase();
+        homeBase.add(grid.getNearestNode(position));
       }
     } else {
       isAtHomebase = false;
@@ -2558,11 +2562,38 @@ class Tank extends Sprite { //<>//
     //println("Tank.COLLISION");
   }
 
+  public void collideTree(PVector collisionPosition){
+    //Om den man krockade med inte är den man vill gå till
+    if(!collisionPosition.equals(targetPosition)){
+      calculatePath(this.previousNode, grid.getNearestNode(targetPosition));
+      searching = false;
+    }
+  }
+
   //*************************************************
-  public void collide(PVector collisionPosition){
+  public void collide(PVector collisionPosition, boolean enemy){
     if(!collisionPosition.equals(targetPosition)){
       this.searching = false;
-      calculatePath(grid.getNearestNode(position), grid.getNearestNode(targetPosition));
+      if (enemy) {
+        
+        addStationaryTankObstacle(position);
+        retreating = true;
+        Node goalNode = null;
+        float currentDistance = 1500;
+        for (Node node : homeBase) {
+          float distance = ((position.x + position.y) - (node.position.x + node.position.y));
+          if (distance < currentDistance) {
+            goalNode = node;
+            currentDistance = distance;
+          } 
+        }
+        System.out.println("GOING HOME TO ----------:" + goalNode.position.x + goalNode.position.y);
+        calculatePath(grid.getNearestNode(position), grid.getNearestNode(goalNode.position));
+        
+      } else {
+        calculatePath(grid.getNearestNode(position), grid.getNearestNode(targetPosition));
+
+      }
     }
   }
 
@@ -2581,8 +2612,8 @@ class Tank extends Sprite { //<>//
 
     if (distanceVectMag <= minDistance && !this.stop_state) {
       addTreeObstacle(other, this.targetPosition);
-      addObstacle(other.position);
-      collide(other.position);
+      addStationaryTankObstacle(other.position);
+      collideTree(other.position);
       this.position.set(this.positionPrev);
       println("! Tank["+ this.getId() + "] – collided with Tree.");
 
@@ -2614,14 +2645,14 @@ class Tank extends Sprite { //<>//
   public void addTreeObstacle(Tree tree, PVector targetedPosition){
       PVector distanceVect = PVector.sub(tree.position, targetedPosition);
       float distanceVectMag = distanceVect.mag();
-      if(distanceVectMag < 45){
-       Node node = grid.getNearestNode(targetPosition);
-       internalGrid[node.getRow()][node.getCol()] = true;
+      if(distanceVectMag < (tree.getRadius()+this.getRadius())) {
+        Node node = grid.getNearestNode(targetPosition);
+        internalGrid[node.getRow()][node.getCol()] = true;
       }
 
     }
 
-    public void addObstacle(PVector position){
+    public void addStationaryTankObstacle(PVector position){
       Node node = grid.getNearestNode(position);
       internalGrid[node.getRow()][node.getCol()] = true;
     }
@@ -2635,6 +2666,10 @@ class Tank extends Sprite { //<>//
     // Get distances between the tanks components
     PVector distanceVect = PVector.sub(other.position, this.position);
 
+    boolean enemy = false;
+    if (other.team_id != team_id) {
+      enemy = true;
+    }
     // Calculate magnitude of the vector separating the tanks
     float distanceVectMag = distanceVect.mag();
 
@@ -2646,7 +2681,7 @@ class Tank extends Sprite { //<>//
       //traversedNodes.add(grid.getNearestNode(other.position));
       
       println("! Tank["+ this.getId() + "] – collided with another Tank" + other.team_id + ":"+other.id);
-      addObstacle(other.position);
+      addStationaryTankObstacle(other.position);
       if (!this.stop_state) {
         //this.position.set(this.positionPrev); // Flytta tillbaka.
 
@@ -2657,7 +2692,7 @@ class Tank extends Sprite { //<>//
 
         if (distanceVectMag <= minDistance) {
           this.position.set(this.positionPrev);
-          collide(other.position);
+          collide(other.position, enemy);
           println("! Tank["+ this.getId() + "] – FAST I EN ANNAN TANK");
         }
         this.isMoving = false;  
@@ -2900,7 +2935,7 @@ class Team1 extends Team {
 
   //==================================================
   public class Tank2 extends Tank {
-    Node previousNode;
+    
     boolean started;
     Stack<Node> nodeStack = new Stack<Node>();
 
@@ -2958,6 +2993,16 @@ class Team1 extends Team {
         this.total_path.remove(this.total_path.size()-1);
         
       } else {
+        if (this.retreating) {
+          try {
+            Thread.sleep(3000);
+          }
+          catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+          this.retreating = false;
+        }
+        
         this.searching = true;
       }
     }
