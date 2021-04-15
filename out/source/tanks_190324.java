@@ -670,6 +670,10 @@ class Grid {
     return vec;
   }
 
+  public Node getNode(int x, int y) {
+    return nodes[x][y];
+  }
+
   //***************************************************  
   public Node getNearestNode(PVector pvec) {
     // En justering för extremvärden.
@@ -1511,6 +1515,7 @@ class Tank extends Sprite { //<>//
 
   Node previousNode;
 
+  boolean atHomeGoal;
   boolean retreating;
 
   Team team;
@@ -1584,7 +1589,7 @@ class Tank extends Sprite { //<>//
   public Set<Node> traversedNodes = new HashSet<Node>();
   public ArrayList<Node> total_path = new ArrayList<Node>();
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
-  private ArrayList<Node> homeBase = new ArrayList<Node>();
+  public ArrayList<Node> homeBase = new ArrayList<Node>();
 
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
@@ -2532,13 +2537,12 @@ class Tank extends Sprite { //<>//
 
     if (
       position.x > team.homebase_x && 
-      position.x < team.homebase_x+team.homebase_width - 50 &&
+      position.x < team.homebase_x+team.homebase_width &&
       position.y > team.homebase_y &&
       position.y < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
         message_arrivedAtHomebase();
-        homeBase.add(grid.getNearestNode(position));
       }
     } else {
       isAtHomebase = false;
@@ -2974,10 +2978,8 @@ class Team1 extends Team {
     public void wander() {
       if(this.searching){
         Node currentNode = this.nodeStack.pop();
-        if (!this.internalGrid[currentNode.getRow()][currentNode.getCol()]) {
-          moveTo(currentNode.position);
-
-        }
+        moveTo(currentNode.position);
+        
 
         //om current node inte finns i traversed node, lägg till den
         if(!this.traversedNodes.contains(currentNode)){
@@ -2995,47 +2997,22 @@ class Team1 extends Team {
         //moveTo(this.total_path.pop().position);
         moveTo(this.total_path.get(this.total_path.size()-1).position);
         this.total_path.remove(this.total_path.size()-1);
-        
+        if (retreating && this.total_path.isEmpty()) {
+          waitInBase();
+          retreating = false;
+        } 
       } else {
-        if (this.retreating) {
-          try {
-            Thread.sleep(3000);
-          }
-          catch(InterruptedException ex) {
-            Thread.currentThread().interrupt();
-          }
-          this.retreating = false;
-        }
-        
         this.searching = true;
       }
     }
 
+    private void waitInBase() {
+      int time = millis();
+      while(millis() < time+3000) {
 
-
-/*
-    public void depthFirstSearch(Node currentNode){
-      Stack<Node> nodeStack = new Stack<Node>();
-      nodeStack.push(currentNode);
-      System.out.println("PUSH PUSH");
-
-      while(!nodeStack.empty()){
-        for(Node node : nodeStack){
-          System.out.println(node.getCol() +" : "+ node.getRow());
-        }
-        currentNode = nodeStack.pop();
-        moveTo(currentNode.position);
-
-        if(!traversedNodes.contains(currentNode)){
-          traversedNodes.add(currentNode);
-
-          for(Node node : grid.getNearestNodes(currentNode)){
-              nodeStack.push(node);
-          }
-        }
       }
+            
     }
-    */
 
     //*******************************************************
     // Tanken meddelas om kollision med trädet.
@@ -3108,6 +3085,11 @@ class Team1 extends Team {
     public void updateLogic() {
       super.updateLogic();
       if (!started) {
+        for (int i = 0; i < 2; i++) {
+          for (int j = 0; j < 6; j++) {
+            this.homeBase.add(grid.getNode(i,j));
+          }
+        }
         started = true;
         //wander();
         nodeStack.push(grid.getNearestNode(this.position));
@@ -3118,7 +3100,7 @@ class Team1 extends Team {
         //moveForward_state();
         if (this.stop_state) {
           //rotateTo()
-          wander();
+            wander();
         }
 
         if (this.idle_state) {

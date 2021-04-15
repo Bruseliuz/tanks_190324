@@ -18,6 +18,7 @@ class Tank extends Sprite { //<>//
 
   Node previousNode;
 
+  boolean atHomeGoal;
   boolean retreating;
 
   Team team;
@@ -91,7 +92,7 @@ class Tank extends Sprite { //<>//
   public Set<Node> traversedNodes = new HashSet<Node>();
   public ArrayList<Node> total_path = new ArrayList<Node>();
   protected ArrayList<Sensor> mySensors = new ArrayList<Sensor>();
-  private ArrayList<Node> homeBase = new ArrayList<Node>();
+  public ArrayList<Node> homeBase = new ArrayList<Node>();
 
   //**************************************************
   Tank(int id, Team team, PVector _startpos, float diameter, CannonBall ball) {
@@ -1039,13 +1040,12 @@ class Tank extends Sprite { //<>//
 
     if (
       position.x > team.homebase_x && 
-      position.x < team.homebase_x+team.homebase_width - 50 &&
+      position.x < team.homebase_x+team.homebase_width &&
       position.y > team.homebase_y &&
       position.y < team.homebase_y+team.homebase_height) {
       if (!isAtHomebase) {
         isAtHomebase = true;
         message_arrivedAtHomebase();
-        homeBase.add(grid.getNearestNode(position));
       }
     } else {
       isAtHomebase = false;

@@ -70,6 +70,10 @@ class Grid {
     return vec;
   }
 
+  Node getNode(int x, int y) {
+    return nodes[x][y];
+  }
+
   //***************************************************  
   Node getNearestNode(PVector pvec) {
     // En justering för extremvärden.
