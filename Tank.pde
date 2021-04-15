@@ -12,6 +12,7 @@ class Tank extends Sprite { //<>//
   PVector acceleration;
   PVector velocity;
   //PVector position; //Sprite
+  boolean chill_state;
 
   float rotation;
   float rotation_speed;
@@ -78,6 +79,7 @@ class Tank extends Sprite { //<>//
   float s = 2.0;
   float image_scale;
 
+  boolean spotted = false;
   boolean isSpinning; // Efter träff snurrar tanken runt, ready=false.
   boolean isReady; // Tanken är redo för action efter att tidigare blivit träffad.
   int remaining_turns;
@@ -1082,8 +1084,14 @@ class Tank extends Sprite { //<>//
     if(!collisionPosition.equals(targetPosition)){
       this.searching = false;
       if (enemy) {
-        
-        addStationaryTankObstacle(position);
+        traversedNodes.add(this.previousNode);
+        traversedNodes.add(grid.getNearestNode(collisionPosition));
+        for (Node node : grid.getNearestNodes(new Node(collisionPosition.x, collisionPosition.y))) {
+          if (!traversedNodes.contains(node)) {
+            traversedNodes.add(node);
+          }
+        }
+        addStationaryTankObstacle(targetPosition);
         retreating = true;
         Node goalNode = null;
         float currentDistance = 10000;
@@ -1163,6 +1171,7 @@ class Tank extends Sprite { //<>//
     public void addStationaryTankObstacle(PVector position){
       Node node = grid.getNearestNode(position);
       internalGrid[node.getRow()][node.getCol()] = true;
+
     }
 
   //**************************************************
@@ -1176,6 +1185,7 @@ class Tank extends Sprite { //<>//
 
     boolean enemy = false;
     if (other.team_id != team_id) {
+      other.spotted = true;
       enemy = true;
       for (Node node : grid.getNearestNodes(new Node(other.position.x, other.position.y))) {
         internalGrid[node.getRow()][node.getCol()] = true;

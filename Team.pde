@@ -52,6 +52,9 @@ class Team {
   void messageSuccessfulHit() {
     this.numberOfHits += 1;
   }
+  void reportedEnemyTank(){
+    this.numberOfHits +=1;
+  }
 
   void updateLogic() {
 

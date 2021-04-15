@@ -54,7 +54,8 @@ class Team1 extends Team {
     public void wander() {
       if(this.searching){
         Node currentNode = this.nodeStack.pop();
-        moveTo(currentNode.position);
+        if (!traversedNodes.contains(currentNode))
+          moveTo(currentNode.position);
         
 
         //om current node inte finns i traversed node, lägg till den
@@ -70,24 +71,41 @@ class Team1 extends Team {
         }
 
       } else if (!this.total_path.isEmpty()){
-        //moveTo(this.total_path.pop().position);
+        // Traversera den, med A-stjärna, uträknade vägen.
         moveTo(this.total_path.get(this.total_path.size()-1).position);
         this.total_path.remove(this.total_path.size()-1);
-        if (retreating && this.total_path.isEmpty()) {
-          waitInBase();
-          retreating = false;
-        } 
-      } else {
-        this.searching = true;
+        
+        
+        
+      }else{
+        if(this.retreating && total_path.isEmpty()){
+          new Thread(new Runnable() {
+            @Override
+            public void run() {
+              waitInBase();
+            }
+          }).start(); 
+        }
+        if(!this.chill_state){
+            this.searching = true;
+        }
+        
+        
       }
     }
+    public void waitInBase(){
+      System.out.println("Waiting in base for 3 seconds!");
 
-    private void waitInBase() {
-      int time = millis();
-      while(millis() < time+3000) {
+      int currentMS = millis();
 
+      while(millis() < currentMS+3000){
+        this.chill_state = true;
+        this.stop_state = true;
       }
-            
+      this.chill_state = false;
+      retreating = false;
+      team.reportedEnemyTank();
+      this.searching = true;
     }
 
     //*******************************************************
@@ -172,15 +190,16 @@ class Team1 extends Team {
       }
 
       if (!this.userControlled) {
+        if (!this.chill_state) {  
+          //moveForward_state();
+          if (this.stop_state) {
+            //rotateTo()
+              wander();
+          }
 
-        //moveForward_state();
-        if (this.stop_state) {
-          //rotateTo()
+          if (this.idle_state) {
             wander();
-        }
-
-        if (this.idle_state) {
-          wander();
+          }
         }
       }
     }
